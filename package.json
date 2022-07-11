@@ -1,0 +1,10 @@
+{
+  "name": "gmeet-clone",
+  "version": "0.0.1",
+  "description": "A clone of google meet video chat application.",
+  "main": "index.js",
+  "repository": "https://github.com/jahnavi23-web/gmeet-clone.git",
+  "author": "Jahnavi Bethanapalli",
+  "license": "UNLICENSED",
+  "dependencies": {}
+}
