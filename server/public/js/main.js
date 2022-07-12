@@ -33,9 +33,11 @@ const msgInput = document.getElementById("msg");
 // };
 
 // // PEER JS - DATA
-const IP_ADDR = "192.168.43.130"; // Redmi IP
-// const IP_ADDR = "192.168.43.38";  // Samsung IP
+const IP_ADDR = "192.168.43.130"; // Redmi Hotspot IP
+// const IP_ADDR = "192.168.43.38";  // Samsung Hotspot IP
 
+// A place to store all the necessary variables - globally
+// Use this object to communicate across functions and events
 var ChatRoom = {};
 ChatRoom.peer = {};
 ChatRoom.connServer = {};
@@ -56,7 +58,7 @@ ChatRoom.MSG_TYPE = {
   MEMBERS_REP: "resp",
 };
 
-// Message submit
+// 'Connect' - When the Peer ID is submitted
 idForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
@@ -122,6 +124,7 @@ idForm.addEventListener("submit", (e) => {
   });
 });
 
+// 'Send' - When the Message is sent
 msgForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
@@ -147,6 +150,7 @@ msgForm.addEventListener("submit", (e) => {
   }
 });
 
+// 'Start' Connection - When a name is submitted
 peerForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
@@ -156,16 +160,14 @@ peerForm.addEventListener("submit", (e) => {
   var name = e.target.elements.name.value;
   ChatRoom.myPeerName = name;
 
-  // Create a new Peer Object
-  // Local
-//   ChatRoom.peer = new Peer(undefined, {
-//     host: IP_ADDR,
-//     port: "3001",
-//   });
-
-  // Online
-    ChatRoom.peer = new Peer(undefined);
-
+  // // Create a new Peer Object
+  // // Local Peer Broker Server
+  // ChatRoom.peer = new Peer(undefined, {
+  //   host: IP_ADDR,
+  //   port: "3001",
+  // });
+  // Cloud Peer Broker Server
+  ChatRoom.peer = new Peer();
 
   // On connection with Peer Broker
   ChatRoom.peer.on("open", (myPeerID) => {
@@ -239,29 +241,7 @@ peerForm.addEventListener("submit", (e) => {
   });
 });
 
-button_leave.onclick = () => {
-  console.log("Clicked Send Peer Button");
-
-  // for (var id in ChatRoom.connClients) {
-  //   var payload = {
-  //     type: ChatRoom.MSG_TYPE.DEPARTURE,
-  //     peerid: ChatRoom.myPeerID,
-  //     name: ChatRoom.myPeerName,
-  //     data: "",
-  //   };
-  //   var connClient = ChatRoom.connClients[id];
-  //   connClient.send(payload);
-  // }
-
-  // var data = { peerid: 12323123, name: "ivana" };
-  // updateUiUsers(data);
-  // data = { data: "hello", name: "ivana" };
-  // updateUiChat(data);
-  // ChatRoom.myPeerName = "shiv";
-  // data = { data: "hi", name: "shiv" };
-  // updateUiChat(data);
-};
-
+// Update Users List - On new User or User left
 function updateUiUsers(data) {
   // var data = {peerid: 12323123, name: 'ivana'};
 
@@ -304,6 +284,7 @@ function updateUiUsers(data) {
   });
 }
 
+// Update Conversation - On new message
 function updateUiChat(data) {
   // data = {data: 'hello', name: 'ivana'};
 
@@ -339,6 +320,7 @@ const myVideo = document.createElement("video");
 // const newVideo = document.getElementById("video");
 myVideo.muted = true;
 
+// Show Self Video first - On Peer Connection Successful
 function setUpMyVideo() {
   if (navigator.mediaDevices.getUserMedia) {
     navigator.mediaDevices
@@ -354,6 +336,7 @@ function setUpMyVideo() {
   }
 }
 
+// Add a new Video to Grid - On each new Call from a User
 function addVideoStream(video, name, stream) {
   video.srcObject = stream;
   const videoGridItem = document.createElement("div");
@@ -369,6 +352,7 @@ function addVideoStream(video, name, stream) {
   videoGrid.append(videoGridItem);
 }
 
+// Reply to a Call - On recieved a new Call
 function replyToCall(call) {
   console.log("Recieving a call");
 
@@ -398,6 +382,7 @@ function replyToCall(call) {
   });
 }
 
+// Request a Call - When You want to call a Peer
 function placeCall(call) {
   const video = document.createElement("video");
   call.on("stream", (remoteUserVideoStream) => {
@@ -420,10 +405,39 @@ function placeCall(call) {
 
 // ----------------------------------------------------------
 
+// 'Leave' - Wrap up & Leave the Chat
+button_leave.onclick = () => {
+  console.log("Clicked Send Peer Button");
+
+  // // Send out Destroy Object Signals
+  // for (var id in ChatRoom.connClients) {
+  //   var payload = {
+  //     type: ChatRoom.MSG_TYPE.DEPARTURE,
+  //     peerid: ChatRoom.myPeerID,
+  //     name: ChatRoom.myPeerName,
+  //     data: "",
+  //   };
+  //   var connClient = ChatRoom.connClients[id];
+  //   connClient.send(payload);
+  // }
+
+  // Test Experimental UI Features here - Without Connecting
+  // var data = { peerid: 12323123, name: "ivana" };
+  // updateUiUsers(data);
+  // data = { data: "hello", name: "ivana" };
+  // updateUiChat(data);
+  // ChatRoom.myPeerName = "shiv";
+  // data = { data: "hi", name: "shiv" };
+  // updateUiChat(data);
+};
+
+// Copy the ID text to clipboard - to be send to Peer
 button_id.onclick = () => {
   copyToClipboard("my-id");
 };
 
+// Copy ID to clipboard
+// TODO: Make it compatible with Android
 function copyToClipboard(containerId) {
   /* Get the text field */
   var copyText = document.getElementById(containerId);
