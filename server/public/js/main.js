@@ -40,13 +40,15 @@ const IP_ADDR = "192.168.43.130"; // Redmi Hotspot IP
 // Use this object to communicate across functions and events
 var ChatRoom = {};
 ChatRoom.peer = {};
-ChatRoom.connServer = {};
 ChatRoom.connClients = {};
 ChatRoom.connClientNames = {};
 ChatRoom.clientsOnCall = [];
 ChatRoom.myPeerID = "";
 ChatRoom.myPeerName = "Me";
 ChatRoom.myVideoStream = {};
+ChatRoom.mySdpTransform = () => {
+  return;
+}; // Advanced MediaStream Settings
 ChatRoom.MSG_TYPE = {
   CHAT: "chat",
   NEW_MEMBER: "new",
@@ -63,65 +65,34 @@ idForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
   // Get message text
-  var id_remote = e.target.elements.id.value;
+  var peer_id_remote = e.target.elements.id.value;
   var name_remote = ChatRoom.myPeerName;
   console.log(
-    "Trying for a Connection with Remote Peer Client : " +
+    "Initiating a Connection with Remote Peer Client : " +
       name_remote +
       " " +
-      id_remote
+      peer_id_remote
   );
 
   // Initiate PeerJS connection with remote
-  const connClient = ChatRoom.peer.connect(id_remote);
-  ChatRoom.connClients[id_remote] = connClient; // Save the Connection for future uses
+  // With Options
+  var options = {
+    label: "some_unique_label",
+    metadata: {},
+    serialization: "binary",
+    // binary-utf8, json, none
+    reliable: false,
+  };
+  // const connClient = ChatRoom.peer.connect(id_remote, optionsConn);
 
-  connClient.on("open", () => {
-    var payload = {
-      type: ChatRoom.MSG_TYPE.NEW_MEMBER,
-      peerid: ChatRoom.myPeerID,
-      name: ChatRoom.myPeerName,
-      data: "",
-    };
-    connClient.send(payload);
-  });
+  // Initiate PeerJS connection with remote Peer Client
+  const connClient = ChatRoom.peer.connect(peer_id_remote);
+  console.info(
+    "Initiating a Connection with Remote Peer Client - " + peer_id_remote
+  );
 
-  // On recieving data from fellow Peer
-  connClient.on("data", (data) => {
-    console.log("Recieved data from peer: " + data.name);
-    switch (data.type) {
-      case ChatRoom.MSG_TYPE.NEW_MEMBER:
-        console.info("New member");
-        console.log("new userName : " + data.name);
-        // Update Connection Names
-        ChatRoom.connClientNames[data.peerid] = data.name;
-        // Update UI - users
-        updateUiUsers(data);
-
-        break;
-      case ChatRoom.MSG_TYPE.BROADCAST:
-        console.info("Message recieved");
-        console.log("new userName : " + data.name);
-        // Update UI - messages
-        updateUiChat(data);
-
-        break;
-      default:
-        break;
-    }
-  });
-
-  connClient.on("close", () => {
-    conn.close();
-  });
-
-  connClient.on("error", (err) => {
-    console.log(err);
-  });
-
-  ChatRoom.peer.on("call", (call) => {
-    replyToCall(call);
-  });
+  // Populate calling functions for each event on Connection
+  addEventsToConnection(connClient);
 });
 
 // 'Send' - When the Message is sent
@@ -162,83 +133,56 @@ peerForm.addEventListener("submit", (e) => {
 
   // // Create a new Peer Object
   // // Local Peer Broker Server
-  // ChatRoom.peer = new Peer(undefined, {
+  // var options_peer = {
+  //   key: undefined,
   //   host: IP_ADDR,
   //   port: "3001",
-  // });
-  // Cloud Peer Broker Server
+  //   pingInterval: 5000,
+  //   path: '/',
+  //   secure: false,
+  //   config: {},
+  //   debug: 1,
+  // }
+  // ChatRoom.peer = new Peer(undefined, options_peer);
+  // // Cloud Peer Broker Server
   ChatRoom.peer = new Peer();
 
-  // On connection with Peer Broker
-  ChatRoom.peer.on("open", (myPeerID) => {
-    console.info(
-      "Success - Connected to Peer Broker with assigned myPeerID: " + myPeerID
-    );
-    ChatRoom.myPeerID = myPeerID;
-    myId.innerHTML = myPeerID;
-  });
-
-  // On connection with fellow Peer Client
-  ChatRoom.peer.on("connection", (conn) => {
-    console.info(
-      "Recieved a Connection from Remote Peer Client - " + conn.peer
-    );
-    conn.peerName = ChatRoom.myPeerName;
-    ChatRoom.connServer[conn.peer] = conn;
-
-    // On connection is Ready to communicate
-    conn.on("open", () => {
-      var payload = {
-        type: ChatRoom.MSG_TYPE.NEW_MEMBER,
-        peerid: ChatRoom.myPeerID,
-        name: ChatRoom.myPeerName,
-        data: "",
-      };
-      conn.send(payload);
-
-      console.log("Connected to Peer Client: " + conn.peer);
-
-      // Add connection to list
-      ChatRoom.connClients[conn.peer] = conn;
-
-      // Update UI - users
+  // TODO: Add function to populate Peer events
+  function addEventsToPeerObject(peer_object) {
+    // On connection with Peer Broker
+    ChatRoom.peer.on("open", (myPeerID) => {
+      console.info(
+        "Success - Connected to Peer Broker with assigned myPeerID: " + myPeerID
+      );
+      ChatRoom.myPeerID = myPeerID;
+      myId.innerHTML = myPeerID;
     });
 
-    // On recieving data from fellow Peer
-    conn.on("data", (data) => {
-      console.log("Recieved data from peer: " + data.name);
-      switch (data.type) {
-        case ChatRoom.MSG_TYPE.NEW_MEMBER:
-          console.info("New member");
-          console.log("new userName : " + data.name);
-          // Update Connection with name
-          ChatRoom.connClientNames[data.peerid] = data.name;
-          // Update UI - users
-          updateUiUsers(data);
-          break;
-        case ChatRoom.MSG_TYPE.BROADCAST:
-          console.info("Message recieved");
-          console.log("new userName : " + data.name);
-          // Update UI - messages
-          updateUiChat(data);
-          break;
-        default:
-          break;
-      }
+    // On Connection request from remote Peer Client
+    ChatRoom.peer.on("connection", (connClient) => {
+      console.info(
+        "Recieved a Connection Request from Remote Peer Client - " +
+          connClient.peer
+      );
+
+      // Populate calling functions for each event on Connection
+      addEventsToConnection(connClient);
     });
 
-    conn.on("close", () => {
-      conn.close();
+    ChatRoom.peer.on("call", (call) => {
+      replyToCall(call);
     });
 
-    conn.on("error", (err) => {
-      console.log(err);
-    });
-  });
+    ChatRoom.peer.on("close", () => {});
 
-  ChatRoom.peer.on("call", (call) => {
-    replyToCall(call);
-  });
+    ChatRoom.peer.on("disconnected", () => {});
+
+    ChatRoom.peer.on("error", (peer_error) => {
+      dispatchPeerError(peer_error);
+    });
+  }
+
+  addEventsToPeerObject(ChatRoom.peer);
 });
 
 // Update Users List - On new User or User left
@@ -278,7 +222,11 @@ function updateUiUsers(data) {
     var peerid = e.target.attributes.peerid.value;
     console.log("call peerid : " + peerid);
 
-    var call = ChatRoom.peer.call(peerid, ChatRoom.myVideoStream);
+    var options = {
+      metadata: {},
+      sdpTransform: ChatRoom.mySdpTransform,
+    };
+    var call = ChatRoom.peer.call(peerid, ChatRoom.myVideoStream, options); // MediaConnection
 
     placeCall(call);
   });
@@ -310,6 +258,90 @@ function updateUiChat(data) {
 
   msgInput.value = "";
 }
+
+// On recieving data from fellow Peer
+function dispatchConnData(data) {
+  console.log("Recieved data from peer: " + data.name);
+  switch (data.type) {
+    case ChatRoom.MSG_TYPE.NEW_MEMBER:
+      console.info("New member");
+      console.log("new userName : " + data.name);
+      // Update Connection Names
+      ChatRoom.connClientNames[data.peerid] = data.name;
+      // Update UI - users
+      updateUiUsers(data);
+      break;
+    case ChatRoom.MSG_TYPE.BROADCAST:
+      console.info("Message recieved");
+      console.log("new userName : " + data.name);
+      // Update UI - messages
+      updateUiChat(data);
+      break;
+    default:
+      console.info("Unknown DataType. What to do with the recieved data?");
+      break;
+  }
+}
+
+function dispatchPeerError(err) {
+  console.info("Trouble with PeerJS Object");
+  switch (err.type) {
+    case "browser-incompatible":
+      console.error(
+        "This browser does not support some or all WebRTC features that you are trying to use."
+      );
+      break;
+    case "disconnected":
+      console.error(
+        "You've already disconnected this peer from the server and can no longer make any new connections on it."
+      );
+      break;
+    case "invalid-id":
+      console.error(
+        "FATAL: The ID passed into the Peer constructor contains illegal characters."
+      );
+      break;
+    case "invalid-key":
+      console.error(
+        "The API key passed into the Peer constructor contains illegal characters or is not in the system (cloud server only)."
+      );
+      break;
+    case "network":
+      console.error(
+        "Lost or cannot establish a connection to the signalling server."
+      );
+      break;
+    case "peer-unavailable":
+      console.error("The peer you're trying to connect to does not exist.");
+      break;
+    case "ssl-unavailable":
+      console.error(
+        "FATAL: PeerJS is being used securely, but the cloud server does not support SSL. Use a custom PeerServer."
+      );
+      break;
+    case "server-error":
+      console.error("FATAL: Unable to reach the server.");
+      break;
+    case "socket-error":
+      console.error("FATAL: An error from the underlying socket.");
+      break;
+    case "socket-closed":
+      console.error("FATAL: The underlying socket closed unexpectedly.");
+      break;
+    case "unavailable-id":
+      console.error(
+        "NOT_SO_FATAL: The ID passed into the Peer constructor is already taken. This error is not fatal if your peer has open peer-to-peer connections. This can happen if you attempt to reconnect a peer that has been disconnected from the server, but its old ID has now been taken."
+      );
+      break;
+    case "webrtc":
+      console.error("Native WebRTC error.");
+      break;
+    default:
+      console.error("Unknown PeerJS error. Needs further investigation");
+  }
+}
+
+function dispatchConnError(err) {}
 
 // --------------------------------------------------------
 
@@ -364,13 +396,16 @@ function replyToCall(call) {
   console.log("Call accepted");
 
   console.log(call);
-  call.answer(ChatRoom.myVideoStream);
+  call.answer(ChatRoom.myVideoStream, {
+    SdpTransform: ChatRoom.mySdpTransform,
+  });
 
   const name = document.createElement("div");
   var peerName = ChatRoom.connClientNames[call.peer];
   name.innerHTML = peerName;
   const video = document.createElement("video");
   video.append(name);
+
   call.on("stream", (remoteUserVideoStream) => {
     console.log("Called > Recieved Stream");
 
@@ -379,6 +414,19 @@ function replyToCall(call) {
       ChatRoom.connClientNames[call.peer],
       remoteUserVideoStream
     );
+  });
+
+  call.on("close", () => {
+    console.info("Closing the Call you placed");
+    if (!call.open) {
+      return;
+    } // If already closed?
+    call.close();
+  });
+
+  call.on("error", (err) => {
+    console.info("Trouble Placing a Call");
+    console.err("Error while placing a Call: " + err);
   });
 }
 
@@ -401,6 +449,53 @@ function placeCall(call) {
       remoteUserVideoStream
     );
   });
+
+  call.on("close", () => {
+    console.info("Closing the Call you placed");
+    call.close();
+  });
+
+  call.on("error", (err) => {
+    console.info("Trouble Placing a Call");
+    console.err("Error while placing a Call: " + err);
+  });
+}
+
+// Populate calling functions for each event on Connection
+function addEventsToConnection(connClient) {
+  // On connection is Ready to communicate
+  connClient.on("open", () => {
+    // Send your name to Client
+    var payload = {
+      type: ChatRoom.MSG_TYPE.NEW_MEMBER,
+      peerid: ChatRoom.myPeerID,
+      name: ChatRoom.myPeerName,
+      data: "",
+    };
+    connClient.send(payload);
+
+    console.log("Connected to Peer Client: " + connClient.peer);
+
+    // Save the Connection for future uses
+    ChatRoom.connClients[connClient.peer] = connClient;
+  });
+
+  // On recieving data from fellow Peer
+  connClient.on("data", (data) => {
+    dispatchConnData(data);
+  });
+
+  connClient.on("close", () => {
+    if (!connClient.open) {
+      return;
+    } // Already closed
+    connClient.close();
+  });
+
+  connClient.on("error", (conn_err) => {
+    console.log(conn_err);
+    dispatchConnError(conn_err);
+  });
 }
 
 // ----------------------------------------------------------
@@ -408,6 +503,8 @@ function placeCall(call) {
 // 'Leave' - Wrap up & Leave the Chat
 button_leave.onclick = () => {
   console.log("Clicked Send Peer Button");
+
+  testBrowserSupport();
 
   // // Send out Destroy Object Signals
   // for (var id in ChatRoom.connClients) {
@@ -432,9 +529,9 @@ button_leave.onclick = () => {
 };
 
 // Copy the ID text to clipboard - to be send to Peer
-button_id.onclick = () => {
-  copyToClipboard("my-id");
-};
+// button_id.onclick = () => {
+//   copyToClipboard("my-id");
+// };
 
 // Copy ID to clipboard
 // TODO: Make it compatible with Android
@@ -449,3 +546,33 @@ function copyToClipboard(containerId) {
   /* Alert the copied text */
   alert("Copied the text: " + text);
 }
+
+// -----------------------------------------
+
+// // On Page Start
+function testBrowserSupport() {
+  var browser = window.peerjs.util.browser;
+  if (browser === "Unsupported") {
+    console.log("Your Browser is " + browser);
+    return;
+  }
+  console.log("Your Browser is " + browser + " & works with PeerJS/WebRTC");
+
+  let reliability = window.peerjs.util.supports.reliable
+    ? "Reliable"
+    : "Unreliable";
+  console.log("It supports " + reliability + ": ");
+  window.peerjs.util.supports.audioVideo
+    ? console.log("  Audio Video Streams")
+    : null;
+  window.peerjs.util.supports.data ? console.log("  Data Channels") : null;
+  window.peerjs.util.supports.binary
+    ? console.log("  Binary Data Channels")
+    : null;
+}
+
+document.addEventListener("load", (e) => {
+  e.preventDefault();
+
+  testBrowserSupport();
+});
