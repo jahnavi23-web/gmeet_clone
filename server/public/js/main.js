@@ -147,41 +147,6 @@ peerForm.addEventListener("submit", (e) => {
   // // Cloud Peer Broker Server
   ChatRoom.peer = new Peer();
 
-  // TODO: Add function to populate Peer events
-  function addEventsToPeerObject(peer_object) {
-    // On connection with Peer Broker
-    ChatRoom.peer.on("open", (myPeerID) => {
-      console.info(
-        "Success - Connected to Peer Broker with assigned myPeerID: " + myPeerID
-      );
-      ChatRoom.myPeerID = myPeerID;
-      myId.innerHTML = myPeerID;
-    });
-
-    // On Connection request from remote Peer Client
-    ChatRoom.peer.on("connection", (connClient) => {
-      console.info(
-        "Recieved a Connection Request from Remote Peer Client - " +
-          connClient.peer
-      );
-
-      // Populate calling functions for each event on Connection
-      addEventsToConnection(connClient);
-    });
-
-    ChatRoom.peer.on("call", (call) => {
-      replyToCall(call);
-    });
-
-    ChatRoom.peer.on("close", () => {});
-
-    ChatRoom.peer.on("disconnected", () => {});
-
-    ChatRoom.peer.on("error", (peer_error) => {
-      dispatchPeerError(peer_error);
-    });
-  }
-
   addEventsToPeerObject(ChatRoom.peer);
 });
 
@@ -283,6 +248,7 @@ function dispatchConnData(data) {
   }
 }
 
+// Handling all Peer Errors at a place
 function dispatchPeerError(err) {
   console.info("Trouble with PeerJS Object");
   switch (err.type) {
@@ -340,8 +306,6 @@ function dispatchPeerError(err) {
       console.error("Unknown PeerJS error. Needs further investigation");
   }
 }
-
-function dispatchConnError(err) {}
 
 // --------------------------------------------------------
 
@@ -485,6 +449,7 @@ function addEventsToConnection(connClient) {
     dispatchConnData(data);
   });
 
+  // On 'close' of either MyPeer or Client connection
   connClient.on("close", () => {
     if (!connClient.open) {
       return;
@@ -492,9 +457,50 @@ function addEventsToConnection(connClient) {
     connClient.close();
   });
 
+  // On Any Error with Connection
   connClient.on("error", (conn_err) => {
-    console.log(conn_err);
-    dispatchConnError(conn_err);
+    console.info("Trouble with a connection");
+    console.error(conn_err);
+  });
+}
+
+// Add function to populate Peer events
+function addEventsToPeerObject(peer_object) {
+  // On connection with Peer Broker
+  ChatRoom.peer.on("open", (myPeerID) => {
+    console.info(
+      "Success - Connected to Peer Broker with assigned myPeerID: " + myPeerID
+    );
+    ChatRoom.myPeerID = myPeerID;
+    myId.innerHTML = myPeerID;
+  });
+
+  // On Connection request from remote Peer Client
+  ChatRoom.peer.on("connection", (connClient) => {
+    console.info(
+      "Recieved a Connection Request from Remote Peer Client - " +
+        connClient.peer
+    );
+
+    // Populate calling functions for each event on Connection
+    addEventsToConnection(connClient);
+  });
+
+  ChatRoom.peer.on("call", (call) => {
+    replyToCall(call);
+  });
+
+  ChatRoom.peer.on("close", () => {
+    console.info("Peer Object is destroyed and it's related data is lost, memory is released. peer object can no longer operate connection. User 'new Peer();");
+  });
+
+  ChatRoom.peer.on("disconnected", () => {
+    console.info("Connection link is lost temporarily.. please wait or try again later with 'peer.reconnect();");
+    // peer.reconnect();
+  });
+
+  ChatRoom.peer.on("error", (peer_error) => {
+    dispatchPeerError(peer_error);
   });
 }
 
@@ -576,3 +582,28 @@ document.addEventListener("load", (e) => {
 
   testBrowserSupport();
 });
+
+// ---------------------------------------------
+
+// TODO: Destory Peer Object on Closing Browser Tab & Wrap up the app
+// peer.destroy();
+
+// TODO: Check Peer Object Connection link is still alive
+// In the event of messages not being delivered and acknowledged
+// if(peer.disconnected === true) {peer.reconnect();}
+
+// TODO: Check if Peer Object is instantiated or not, if not Add new
+// if(peer.destroyed === true) {ChatRoom.peer = new Peer();}
+
+// TODO: Disconnect a connection link temporarily to save data
+// peer.disconnect();
+// peer.reconnect();   // when you want to revived the link
+// setTimeout(peer.reconnect(), 5000);
+
+// TODO: Close the data connection cleanly - when it is no longer needed to save bandwidth
+// connClient.close();
+// dataConnection.close();
+
+// TODO: Close and Clean a Call MediaStream - when it is no longer needed to save bandwitdh
+// call.close();
+// mediaConnection.close();
