@@ -1,20 +1,4 @@
-// WEB SOCKET - EXAMPLE
-
-// Creating a Web Socket Client
-// const socket = io();
-
-// const button_socket = document.getElementById("btn-sckt");
-
-// button_socket.onclick = () => {
-//   console.log("button socket clicked");
-//   const payload = "tong";
-//   socket.emit("event", payload);
-// };
-
-// // PEER JS - DATA
-const IP_ADDR = "192.168.43.130";
-// const IP_ADDR = "192.168.43.38";
-
+// UI Element Objects
 const idForm = document.getElementById("id-form");
 const msgForm = document.getElementById("msg-form");
 const peerForm = document.getElementById("peer-form");
@@ -34,6 +18,23 @@ const chatText = document.createElement("div");
 const chatName = document.createElement("h4");
 
 const msgInput = document.getElementById("msg");
+
+// WEB SOCKET - EXAMPLE
+
+// Creating a Web Socket Client
+// const socket = io();
+
+// const button_socket = document.getElementById("btn-sckt");
+
+// button_socket.onclick = () => {
+//   console.log("button socket clicked");
+//   const payload = "tong";
+//   socket.emit("event", payload);
+// };
+
+// // PEER JS - DATA
+const IP_ADDR = "192.168.43.130"; // Redmi IP
+// const IP_ADDR = "192.168.43.38";  // Samsung IP
 
 var ChatRoom = {};
 ChatRoom.peer = {};
@@ -118,14 +119,6 @@ idForm.addEventListener("submit", (e) => {
 
   ChatRoom.peer.on("call", (call) => {
     replyToCall(call);
-    // console.log("Recieving a call");
-    // call.answer(ChatRoom.myVideoStream);
-
-    // const video = document.createElement("video");
-    // call.on("stream", (remoteUserVideoStream) => {
-    //   console.log("Called > Recieved Stream");
-    //   addVideoStream(video, remoteUserVideoStream);
-    // });
   });
 });
 
@@ -262,12 +255,9 @@ button_leave.onclick = () => {
 
   // var data = { peerid: 12323123, name: "ivana" };
   // updateUiUsers(data);
-
   // data = { data: "hello", name: "ivana" };
   // updateUiChat(data);
-
   // ChatRoom.myPeerName = "shiv";
-
   // data = { data: "hi", name: "shiv" };
   // updateUiChat(data);
 };
@@ -338,19 +328,6 @@ function updateUiChat(data) {
   chatGrid.append(chatBox_);
 
   msgInput.value = "";
-
-  // const chatBox__ = document.createElement("div");
-  // const chatText__ = document.createElement("div");
-  // const chatName__ = document.createElement("div");
-  // chatBox__.classList.add(message_from);
-  // chatText__.classList.add("message-text");
-  // chatName__.classList.add("message-username");
-
-  // chatName__.innerHTML = data.name;
-  // chatText__.innerHTML = data.data;
-  // chatBox__.append(chatName__);
-  // chatBox__.append(chatText__);
-  // chatGrid.append(chatBox__);
 }
 
 // --------------------------------------------------------
