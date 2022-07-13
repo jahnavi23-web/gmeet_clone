@@ -51,6 +51,8 @@ ChatRoom.mySdpTransform = () => {
 }; // Advanced MediaStream Settings
 ChatRoom.MSG_TYPE = {
   CHAT: "chat",
+  CALL: "call",
+  END_CALL: "end_call",
   NEW_MEMBER: "new",
   DEPARTURE: "leave",
   BROADCAST: "send",
@@ -60,11 +62,13 @@ ChatRoom.MSG_TYPE = {
   MEMBERS_REP: "resp",
 };
 
+ChatRoom.callsList = {};
+
 // 'Connect' - When the Peer ID is submitted
 idForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
-  // Get message text
+  // Get ID
   var peer_id_remote = e.target.elements.id.value;
   var name_remote = ChatRoom.myPeerName;
   console.log(
@@ -125,9 +129,7 @@ msgForm.addEventListener("submit", (e) => {
 peerForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
-  setUpMyVideo();
-
-  // Get message text
+  // Get My Name
   var name = e.target.elements.name.value;
   ChatRoom.myPeerName = name;
 
@@ -159,28 +161,35 @@ function updateUiUsers(data) {
   const userID_ = document.createElement("div");
   const userUpperBox_ = document.createElement("div");
   const userName_ = document.createElement("div");
-  const btnCall_ = document.createElement("button");
   userBox_.classList.add("message-they");
   userID_.classList.add("message-text");
   userUpperBox_.classList.add("user-upper-box-flex");
   userName_.classList.add("message-username");
-  btnCall_.classList.add("btn-call");
-  btnCall_.setAttribute("id", "btn-call");
-  btnCall_.setAttribute("peerid", data.peerid);
   userForm_.setAttribute("peerid", data.peerid);
   userID_.setAttribute("peerid", data.peerid);
+
+  const btnCall_ = document.createElement("button");
+  const btnEndCall_ = document.createElement("button");
+  btnCall_.classList.add("btn-call");
+  btnEndCall_.classList.add("btn-call");
+  btnCall_.setAttribute("id", "btn-call");
+  btnEndCall_.setAttribute("id", "btn-end-call");
+  btnCall_.setAttribute("peerid", data.peerid);
+  btnEndCall_.setAttribute("peerid", data.peerid);
   btnCall_.innerHTML = "Call";
+  btnEndCall_.innerHTML = "End_Call";
 
   userID_.innerHTML = data.peerid;
   userName_.innerHTML = data.name;
   userUpperBox_.append(userName_);
   userUpperBox_.append(btnCall_);
+  userUpperBox_.append(btnEndCall_);
   userBox_.append(userUpperBox_);
   userBox_.append(userID_);
   userForm_.append(userBox_);
   userGrid.append(userForm_);
 
-  userForm_.addEventListener("submit", (e) => {
+  btnCall_.addEventListener("click", (e) => {
     e.preventDefault();
     console.log("Call button clicked");
     // console.log(e);
@@ -192,8 +201,29 @@ function updateUiUsers(data) {
       sdpTransform: ChatRoom.mySdpTransform,
     };
     var call = ChatRoom.peer.call(peerid, ChatRoom.myVideoStream, options); // MediaConnection
+    ChatRoom.callsList[peerid] = call;
+    console.log(ChatRoom.callsList);
 
     placeCall(call);
+  });
+
+  btnEndCall_.addEventListener("click", (e) => {
+    e.preventDefault();
+    console.log("End Call button clicked");
+    // console.log(e);
+    var peerid = e.target.attributes.peerid.value;
+    console.log("Peer ID from button: " + peerid);
+
+    endCall(peerid);
+    // ChatRoom.callsList[peerid].close();
+    // console.log(ChatRoom.callsList);
+
+    var payload = {
+      type: ChatRoom.MSG_TYPE.END_CALL,
+      peerid: ChatRoom.myPeerID,
+      name: ChatRoom.myPeerName,
+    }
+    ChatRoom.connClients[peerid].send(payload);
   });
 }
 
@@ -241,6 +271,10 @@ function dispatchConnData(data) {
       console.log("new userName : " + data.name);
       // Update UI - messages
       updateUiChat(data);
+      break;
+    case ChatRoom.MSG_TYPE.END_CALL:
+      console.info("Request Recieved to End Call");
+      endCall(data.peerid);
       break;
     default:
       console.info("Unknown DataType. What to do with the recieved data?");
@@ -307,6 +341,27 @@ function dispatchPeerError(err) {
   }
 }
 
+function endCall(peerid) {
+  if (Object.keys(ChatRoom.callsList).length !== 0) {
+    console.log("Enging call peerid : " + peerid);
+    // delete ChatRoom.callsList[peerid];
+    ChatRoom.callsList[peerid].close();
+    delete ChatRoom.callsList[peerid];
+    console.log(ChatRoom.callsList);
+    removeVideoStream(peerid);
+  } else {
+    console.log("Call list is empty. No calls to end.");
+  }
+}
+
+// Remove a Video from Grid - On Call End
+function removeVideoStream(peerid) {
+  const videoGridItem = document.getElementById(`video-grid-item-${peerid}`);
+  // document.getElementById("video-grid").removeChild(videoGridItem);
+  console.log('removing video from video grid');
+  videoGridItem.remove();
+}
+
 // --------------------------------------------------------
 
 // VIDEO - WEB CAMERA
@@ -323,7 +378,7 @@ function setUpMyVideo() {
       .getUserMedia({ video: true })
       .then(function (stream) {
         // Show our video on our Screen
-        addVideoStream(myVideo, ChatRoom.myPeerName, stream);
+        addVideoStream(myVideo, stream, ChatRoom.myPeerName, ChatRoom.myPeerID);
         ChatRoom.myVideoStream = stream;
       })
       .catch(function (err0r) {
@@ -333,10 +388,13 @@ function setUpMyVideo() {
 }
 
 // Add a new Video to Grid - On each new Call from a User
-function addVideoStream(video, name, stream) {
+function addVideoStream(video, stream, name, peerid) {
   video.srcObject = stream;
   const videoGridItem = document.createElement("div");
   videoGridItem.classList.add("video-grid-item");
+  console.log("add video stream with peerid: " + peerid);
+  videoGridItem.setAttribute("id", `video-grid-item-${peerid}`);
+
   const myname = document.createElement("div");
   myname.classList.add("video-overlay");
   myname.innerHTML = name;
@@ -348,57 +406,29 @@ function addVideoStream(video, name, stream) {
   videoGrid.append(videoGridItem);
 }
 
+
+
 // Reply to a Call - On recieved a new Call
 function replyToCall(call) {
-  console.log("Recieving a call");
+  console.log("Recieving a call from " + call.peer);
 
-  if (ChatRoom.clientsOnCall.includes(call.peer)) {
-    console.log("Call already in process");
-    return;
-  }
-  ChatRoom.clientsOnCall.push(call.peer);
-  console.log("Call accepted");
-
-  console.log(call);
   call.answer(ChatRoom.myVideoStream, {
     SdpTransform: ChatRoom.mySdpTransform,
   });
 
-  const name = document.createElement("div");
-  var peerName = ChatRoom.connClientNames[call.peer];
-  name.innerHTML = peerName;
-  const video = document.createElement("video");
-  video.append(name);
-
-  call.on("stream", (remoteUserVideoStream) => {
-    console.log("Called > Recieved Stream");
-
-    addVideoStream(
-      video,
-      ChatRoom.connClientNames[call.peer],
-      remoteUserVideoStream
-    );
-  });
-
-  call.on("close", () => {
-    console.info("Closing the Call you placed");
-    if (!call.open) {
-      return;
-    } // If already closed?
-    call.close();
-  });
-
-  call.on("error", (err) => {
-    console.info("Trouble Placing a Call");
-    console.err("Error while placing a Call: " + err);
-  });
+  addEventsToCall(call);
 }
 
 // Request a Call - When You want to call a Peer
 function placeCall(call) {
-  const video = document.createElement("video");
+  console.log("Sending a call request to " + call.peer);
+
+  addEventsToCall(call);
+}
+
+function addEventsToCall(call) {
   call.on("stream", (remoteUserVideoStream) => {
-    console.log("Called > Recieved Stream");
+    console.log("Call > Recieved Stream");
 
     if (ChatRoom.clientsOnCall.includes(call.peer)) {
       console.log("Call already in progress");
@@ -407,16 +437,19 @@ function placeCall(call) {
     ChatRoom.clientsOnCall.push(call.peer);
     console.log("Call accepted");
 
+    const video = document.createElement("video");
+
     addVideoStream(
       video,
+      remoteUserVideoStream,
       ChatRoom.connClientNames[call.peer],
-      remoteUserVideoStream
+      call.peer
     );
   });
 
   call.on("close", () => {
-    console.info("Closing the Call you placed");
-    call.close();
+    console.info("Closed the Call.");
+    // endCall(call.peer);
   });
 
   call.on("error", (err) => {
@@ -451,6 +484,7 @@ function addEventsToConnection(connClient) {
 
   // On 'close' of either MyPeer or Client connection
   connClient.on("close", () => {
+    console.info("Closing connection: " + connClient.peer);
     if (!connClient.open) {
       return;
     } // Already closed
@@ -465,18 +499,22 @@ function addEventsToConnection(connClient) {
 }
 
 // Add function to populate Peer events
-function addEventsToPeerObject(peer_object) {
+function addEventsToPeerObject(peer) {
   // On connection with Peer Broker
-  ChatRoom.peer.on("open", (myPeerID) => {
+  peer.on("open", (myPeerID) => {
     console.info(
       "Success - Connected to Peer Broker with assigned myPeerID: " + myPeerID
     );
+
+    // Get My Peer ID
     ChatRoom.myPeerID = myPeerID;
     myId.innerHTML = myPeerID;
+
+    setUpMyVideo();
   });
 
   // On Connection request from remote Peer Client
-  ChatRoom.peer.on("connection", (connClient) => {
+  peer.on("connection", (connClient) => {
     console.info(
       "Recieved a Connection Request from Remote Peer Client - " +
         connClient.peer
@@ -486,20 +524,25 @@ function addEventsToPeerObject(peer_object) {
     addEventsToConnection(connClient);
   });
 
-  ChatRoom.peer.on("call", (call) => {
+  peer.on("call", (call) => {
+    ChatRoom.callsList[call.peer] = call;
     replyToCall(call);
   });
 
-  ChatRoom.peer.on("close", () => {
-    console.info("Peer Object is destroyed and it's related data is lost, memory is released. peer object can no longer operate connection. User 'new Peer();");
+  peer.on("close", () => {
+    console.info(
+      "Peer Object is destroyed and it's related data is lost, memory is released. peer object can no longer operate connection. User 'new Peer();"
+    );
   });
 
-  ChatRoom.peer.on("disconnected", () => {
-    console.info("Connection link is lost temporarily.. please wait or try again later with 'peer.reconnect();");
+  peer.on("disconnected", () => {
+    console.info(
+      "Connection link is lost temporarily.. please wait or try again later with 'peer.reconnect();"
+    );
     // peer.reconnect();
   });
 
-  ChatRoom.peer.on("error", (peer_error) => {
+  peer.on("error", (peer_error) => {
     dispatchPeerError(peer_error);
   });
 }
@@ -510,7 +553,12 @@ function addEventsToPeerObject(peer_object) {
 button_leave.onclick = () => {
   console.log("Clicked Send Peer Button");
 
-  testBrowserSupport();
+  for (var peer in ChatRoom.connClients) {
+    console.log("peer id: " + peer);
+    ChatRoom.connClients[peer].close();
+  }
+
+  // testBrowserSupport();
 
   // // Send out Destroy Object Signals
   // for (var id in ChatRoom.connClients) {
