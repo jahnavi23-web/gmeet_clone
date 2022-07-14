@@ -14,17 +14,21 @@
             <div class="my-id-box">My PeerJS ID:</div>
             <form id="peer-form">
               <input
-                id="name"
+                id="peer-name"
                 class="input-name"
                 type="text"
                 placeholder="Enter your name"
                 required
                 autocomplete="on"
               />
-              <button style="display: inline">
+              <button style="display: inline" type="submit" id="btn-start-peer" >
+                <!-- onclick="onClickStartButton()"> -->
                 <i class="fas fa-paper-plane"></i>Start
-              </button>
+              </button>              
             </form>
+            <button style="display: inline" id="btn-stop-peer">
+              <i class="fas fa-paper-plane"></i>Stop
+            </button>
           </div>
           
           <!-- <div>Click to copy -->
@@ -45,7 +49,10 @@
               required
               autocomplete="off"
             />
-            <button class="leave">
+            <button class="leave" id="btn-open-connection">
+              <i class="fas fa-paper-plane"></i>Connect
+            </button>
+            <button class="leave" id="btn-close-connection">
               <i class="fas fa-paper-plane"></i>Connect
             </button>
           </form>

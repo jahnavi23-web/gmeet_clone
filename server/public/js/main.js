@@ -3,9 +3,17 @@ const idForm = document.getElementById("id-form");
 const msgForm = document.getElementById("msg-form");
 const peerForm = document.getElementById("peer-form");
 const inputID = document.getElementById("id");
+const inputName = document.getElementById("peer-name");
+
 const myId = document.getElementById("my-id");
-const button_leave = document.getElementById("btn-leave");
-const button_id = document.getElementById("btn-id");
+
+const btnLeave = document.getElementById("btn-leave");
+const btnId = document.getElementById("btn-id");
+const btnStart = document.getElementById("btn-start-peer");
+const btnStop = document.getElementById("btn-stop-peer");
+const btnOpen = document.getElementById("btn-open-connection");
+const btnClose = document.getElementById("btn-close-connection");
+btnStop.disabled = true;
 
 const userGrid = document.getElementById("user-grid");
 const userBox = document.createElement("span");
@@ -39,7 +47,9 @@ const IP_ADDR = "192.168.43.130"; // Redmi Hotspot IP
 // A place to store all the necessary variables - globally
 // Use this object to communicate across functions and events
 var ChatRoom = {};
-ChatRoom.peer = {};
+// ChatRoom.peer = {};
+ChatRoom.peer = null;
+ChatRoom.PEER_LOCAL = false;
 ChatRoom.connClients = {};
 ChatRoom.connClientNames = {};
 ChatRoom.clientsOnCall = [];
@@ -128,28 +138,77 @@ msgForm.addEventListener("submit", (e) => {
 // 'Start' Connection - When a name is submitted
 peerForm.addEventListener("submit", (e) => {
   e.preventDefault();
+  onClickStartButton();
+});
+
+// 'Start' Connection - When a name is submitted
+function onClickStartButton() {
+  console.log("Start button clicked");
+
+  if (ChatRoom.peer !== null) {
+    if (ChatRoom.peer.destroyed === true) {
+      console.log("Peer already Exists & But Destroyed. Starting New Peer.");
+    } else {
+      console.log("Peer already Exists & Active. Cannot Start New Peer.");
+      return;
+    }
+  } else {
+    console.log("Starting New Peer.");
+  }
+  btnStart.disabled = true;
+  btnStop.disabled = false;
 
   // Get My Name
-  var name = e.target.elements.name.value;
+  var name = inputName.value;
   ChatRoom.myPeerName = name;
 
-  // // Create a new Peer Object
-  // // Local Peer Broker Server
-  // var options_peer = {
-  //   key: undefined,
-  //   host: IP_ADDR,
-  //   port: "3001",
-  //   pingInterval: 5000,
-  //   path: '/',
-  //   secure: false,
-  //   config: {},
-  //   debug: 1,
-  // }
-  // ChatRoom.peer = new Peer(undefined, options_peer);
-  // // Cloud Peer Broker Server
-  ChatRoom.peer = new Peer();
+  // Create a new Peer Object
+  // Options for Local Peer Object
+  var options_peer = {
+    key: undefined,
+    host: IP_ADDR,
+    port: "3001",
+    pingInterval: 5000,
+    path: "/",
+    secure: false,
+    config: {},
+    debug: 1,
+  };
 
+  if (ChatRoom.PEER_LOCAL) {
+    // Local Peer Broker Server
+    ChatRoom.peer = new Peer(undefined, options_peer);
+  } else {
+    // Cloud Peer Broker Server
+    ChatRoom.peer = new Peer();
+  }
+
+  // Populate Peer Object with On-Events
   addEventsToPeerObject(ChatRoom.peer);
+}
+// );
+
+btnStop.addEventListener("click", (e) => {
+  e.preventDefault();
+  console.log("Stop button clicked");
+
+  if (ChatRoom.peer === null) {
+    console.log("No Peer Exists to Stop.");
+    return;
+  }
+
+  if (ChatRoom.peer.destroyed) {
+    console.log("Peer already Exists & Destroyed. Nothing to Stop.");
+    return;
+  }
+
+  btnStart.disabled = false;
+  btnStop.disabled = true;
+
+  ChatRoom.peer.destroy();
+
+  var peerid = ChatRoom.myPeerID;
+  removeVideoStream(peerid);
 });
 
 // Update Users List - On new User or User left
@@ -222,7 +281,7 @@ function updateUiUsers(data) {
       type: ChatRoom.MSG_TYPE.END_CALL,
       peerid: ChatRoom.myPeerID,
       name: ChatRoom.myPeerName,
-    }
+    };
     ChatRoom.connClients[peerid].send(payload);
   });
 }
@@ -358,7 +417,7 @@ function endCall(peerid) {
 function removeVideoStream(peerid) {
   const videoGridItem = document.getElementById(`video-grid-item-${peerid}`);
   // document.getElementById("video-grid").removeChild(videoGridItem);
-  console.log('removing video from video grid');
+  console.log("removing video from video grid");
   videoGridItem.remove();
 }
 
@@ -373,6 +432,22 @@ myVideo.muted = true;
 
 // Show Self Video first - On Peer Connection Successful
 function setUpMyVideo() {
+  if (navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices
+      .getUserMedia({ video: true })
+      .then(function (stream) {
+        // Show our video on our Screen
+        addVideoStream(myVideo, stream, ChatRoom.myPeerName, ChatRoom.myPeerID);
+        ChatRoom.myVideoStream = stream;
+      })
+      .catch(function (err0r) {
+        console.log("Something went wrong!");
+      });
+  }
+}
+
+// Remove Self Video - On Peer Connection Closed / Destroyed
+function removeMyVideo() {
   if (navigator.mediaDevices.getUserMedia) {
     navigator.mediaDevices
       .getUserMedia({ video: true })
@@ -405,8 +480,6 @@ function addVideoStream(video, stream, name, peerid) {
   });
   videoGrid.append(videoGridItem);
 }
-
-
 
 // Reply to a Call - On recieved a new Call
 function replyToCall(call) {
@@ -449,7 +522,6 @@ function addEventsToCall(call) {
 
   call.on("close", () => {
     console.info("Closed the Call.");
-    // endCall(call.peer);
   });
 
   call.on("error", (err) => {
@@ -524,8 +596,10 @@ function addEventsToPeerObject(peer) {
     addEventsToConnection(connClient);
   });
 
+  // TODO: CORRECT THE CONDITIONAL EXPRESSION
   peer.on("call", (call) => {
-    ChatRoom.callsList[call.peer] = call;
+    if (ChatRoom.callsList === {} || Object.ChatRoom.callsList.conta)
+      ChatRoom.callsList[call.peer] = call;
     replyToCall(call);
   });
 
@@ -550,7 +624,7 @@ function addEventsToPeerObject(peer) {
 // ----------------------------------------------------------
 
 // 'Leave' - Wrap up & Leave the Chat
-button_leave.onclick = () => {
+btnLeave.onclick = () => {
   console.log("Clicked Send Peer Button");
 
   for (var peer in ChatRoom.connClients) {
