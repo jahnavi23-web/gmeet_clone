@@ -7,6 +7,8 @@ const inputName = document.getElementById("peer-name");
 
 const myId = document.getElementById("my-id");
 
+const connecInfo = document.getElementById("connec-info");
+
 const btnLeave = document.getElementById("btn-leave");
 const btnId = document.getElementById("btn-id");
 const btnStart = document.getElementById("btn-start-peer");
@@ -81,6 +83,13 @@ idForm.addEventListener("submit", (e) => {
   // Get ID
   var peer_id_remote = e.target.elements.id.value;
   var name_remote = ChatRoom.myPeerName;
+  
+  if(peer_id_remote in ChatRoom.connClients) {
+    connecInfo.innerText = "Connection already exists";
+    console.info("Connection already exists.");
+    return;
+  }
+
   console.log(
     "Initiating a Connection with Remote Peer Client : " +
       name_remote +
