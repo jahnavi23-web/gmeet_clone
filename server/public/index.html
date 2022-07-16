@@ -24,10 +24,31 @@
               <button style="display: inline" type="submit" id="btn-start-peer" >
                 <!-- onclick="onClickStartButton()"> -->
                 <i class="fas fa-paper-plane"></i>Start
-              </button>              
+              </button>
             </form>
             <button style="display: inline" id="btn-stop-peer">
               <i class="fas fa-paper-plane"></i>Stop
+            </button>
+          </div>
+
+          <div class="my-id-upper-row-flex">
+            <div class="my-id-box">My Room ID:</div>
+            <form id="room-form">
+              <input
+                id="room-name"
+                class="input-name"
+                type="text"
+                placeholder="Enter Room name"
+                required
+                autocomplete="on"
+              />
+              <button style="display: inline" type="submit" id="btn-start-room" >
+                <!-- onclick="onClickStartButton()"> -->
+                <i class="fas fa-paper-plane"></i>Start
+              </button>
+            </form>
+            <button style="display: inline" id="btn-end-room">
+              <i class="fas fa-paper-plane"></i>End
             </button>
           </div>
           
@@ -40,9 +61,9 @@
         </div>
 
         <div class="peer-id-box">
-          <form id="id-form" class="id-form">
+          <form id="peer-id-form" class="id-form">
             <input
-              id="id"
+              id="peerId"
               class="input-id"
               type="text"
               placeholder="Enter Remote Client ID"
@@ -50,11 +71,28 @@
               autocomplete="off"
             />
             <button class="leave" id="btn-open-connection">
-              <i class="fas fa-paper-plane"></i>Connect
+              <i class="fas fa-paper-plane"></i>Connect peer
             </button>
           </form>
-          <div id="connec-info">Connection Info</div>
+
+          <div class="room-id-box">
+            <form id="room-id-form" class="id-form">
+              <input
+                id="roomId"
+                class="input-id"
+                type="text"
+                placeholder="Enter Room ID"
+                required
+                autocomplete="off"
+              />
+              <button class="leave" id="btn-enter-room">
+                <i class="fas fa-paper-plane"></i>Enter Room
+              </button>
+            </form>
+            <div id="connec-info">Connection Info</div>
+          </div>
         </div>
+        
 
         <button class="leave" id="btn-leave">Leave</button>
       </header>
