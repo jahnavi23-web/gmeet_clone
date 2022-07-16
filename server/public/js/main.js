@@ -66,7 +66,8 @@ ChatRoom.MSG_TYPE = {
   CALL: "call",
   END_CALL: "end_call",
   NEW_MEMBER: "new",
-  DEPARTURE: "leave",
+  DISCONNECT: "disconnect",
+  DEPARTUTE: "leave",
   BROADCAST: "send",
   PING: "ping",
   ACK: "ack",
@@ -74,7 +75,7 @@ ChatRoom.MSG_TYPE = {
   MEMBERS_REP: "resp",
 };
 
-ChatRoom.callsList = {};
+ChatRoom.callsList = null;
 
 // 'Connect' - When the Peer ID is submitted
 idForm.addEventListener("submit", (e) => {
@@ -83,8 +84,8 @@ idForm.addEventListener("submit", (e) => {
   // Get ID
   var peer_id_remote = e.target.elements.id.value;
   var name_remote = ChatRoom.myPeerName;
-  
-  if(peer_id_remote in ChatRoom.connClients) {
+
+  if (peer_id_remote in ChatRoom.connClients) {
     connecInfo.innerText = "Connection already exists";
     console.info("Connection already exists.");
     return;
@@ -236,22 +237,33 @@ function updateUiUsers(data) {
   userForm_.setAttribute("peerid", data.peerid);
   userID_.setAttribute("peerid", data.peerid);
 
+  userForm_.setAttribute("id", `user-grid-item-${data.peerid}`);
+
   const btnCall_ = document.createElement("button");
   const btnEndCall_ = document.createElement("button");
+  const btnDisconnect_ = document.createElement("button");
   btnCall_.classList.add("btn-call");
   btnEndCall_.classList.add("btn-call");
-  btnCall_.setAttribute("id", "btn-call");
-  btnEndCall_.setAttribute("id", "btn-end-call");
+  btnDisconnect_.classList.add("btn-call");
+  btnCall_.setAttribute("id", `btn-call-${data.peerid}`);
+  btnEndCall_.setAttribute("id", `btn-end-call-${data.peerid}`);
+  btnDisconnect_.setAttribute("id", "btn-disconnect");
   btnCall_.setAttribute("peerid", data.peerid);
   btnEndCall_.setAttribute("peerid", data.peerid);
+  btnDisconnect_.setAttribute("peerid", data.peerid);
   btnCall_.innerHTML = "Call";
   btnEndCall_.innerHTML = "End_Call";
+  btnDisconnect_.innerHTML = "Disconnect";
+
+  btnCall_.disabled = false;
+  btnEndCall_.disabled = true;
 
   userID_.innerHTML = data.peerid;
   userName_.innerHTML = data.name;
   userUpperBox_.append(userName_);
   userUpperBox_.append(btnCall_);
   userUpperBox_.append(btnEndCall_);
+  userUpperBox_.append(btnDisconnect_);
   userBox_.append(userUpperBox_);
   userBox_.append(userID_);
   userForm_.append(userBox_);
@@ -269,18 +281,26 @@ function updateUiUsers(data) {
       sdpTransform: ChatRoom.mySdpTransform,
     };
     var call = ChatRoom.peer.call(peerid, ChatRoom.myVideoStream, options); // MediaConnection
+
+    if (ChatRoom.callsList === null) ChatRoom.callsList = {};
+    if (call.peer in ChatRoom.callsList === true) return;
+
     ChatRoom.callsList[peerid] = call;
-    console.log(ChatRoom.callsList);
+    // console.log(ChatRoom.callsList);
 
     placeCall(call);
+
+    btnCall_.disabled = true;
+    btnEndCall_.disabled = false;
   });
 
   btnEndCall_.addEventListener("click", (e) => {
     e.preventDefault();
     console.log("End Call button clicked");
     // console.log(e);
+
     var peerid = e.target.attributes.peerid.value;
-    console.log("Peer ID from button: " + peerid);
+    console.log("Ending Call of : " + peerid);
 
     endCall(peerid);
     // ChatRoom.callsList[peerid].close();
@@ -292,7 +312,44 @@ function updateUiUsers(data) {
       name: ChatRoom.myPeerName,
     };
     ChatRoom.connClients[peerid].send(payload);
+
+    btnCall_.disabled = false;
+    btnEndCall_.disabled = true;
   });
+
+  btnDisconnect_.addEventListener("click", (e) => {
+    e.preventDefault();
+    console.log("Disconnect button clicked");
+    // console.log(e);
+    var peerid = e.target.attributes.peerid.value;
+    console.log("Disconnecting dataConnection with : " + peerid);
+
+    disconnectClient(peerid);
+  });
+}
+
+function disconnectClient(peerid) {
+  var payload = {
+    type: ChatRoom.MSG_TYPE.DISCONNECT,
+    peerid: ChatRoom.myPeerID,
+    name: ChatRoom.myPeerName,
+  };
+
+  if (ChatRoom.connClients === null) return;
+  if (peerid in ChatRoom.connClients === false) return;
+
+  if (ChatRoom.connClients[peerid].open) {
+    // If Connection Open
+    ChatRoom.connClients[peerid].send(payload);
+    ChatRoom.connClients[peerid].close();
+    return;
+  }
+  delete ChatRoom.connClients[peerid];
+
+  endCall(peerid);
+
+  const userGridItem = document.getElementById(`user-grid-item-${peerid}`);
+  userGridItem.remove();
 }
 
 // Update Conversation - On new message
@@ -343,6 +400,11 @@ function dispatchConnData(data) {
     case ChatRoom.MSG_TYPE.END_CALL:
       console.info("Request Recieved to End Call");
       endCall(data.peerid);
+      break;
+    case ChatRoom.MSG_TYPE.DISCONNECT:
+      console.info("Request Recieved to Disconnect Client");
+
+      disconnectClient(data.peerid);
       break;
     default:
       console.info("Unknown DataType. What to do with the recieved data?");
@@ -410,16 +472,31 @@ function dispatchPeerError(err) {
 }
 
 function endCall(peerid) {
-  if (Object.keys(ChatRoom.callsList).length !== 0) {
-    console.log("Enging call peerid : " + peerid);
-    // delete ChatRoom.callsList[peerid];
-    ChatRoom.callsList[peerid].close();
-    delete ChatRoom.callsList[peerid];
-    console.log(ChatRoom.callsList);
-    removeVideoStream(peerid);
-  } else {
+  if (
+    ChatRoom.callsList === null ||
+    Object.keys(ChatRoom.callsList).length === 0
+  ) {
     console.log("Call list is empty. No calls to end.");
+    return;
   }
+
+  if (peerid in ChatRoom.callsList === false) {
+    console.log("No such call in active calls list.");
+    return;
+  }
+
+  var btnCall_ = document.getElementById(`btn-call-${peerid}`);
+  var btnEndCall_ = document.getElementById(`btn-end-call-${peerid}`);
+
+  btnCall_.disabled = false;
+  btnEndCall_.disabled = true;
+
+  console.log("Enging call peerid : " + peerid);
+  // delete ChatRoom.callsList[peerid];
+  ChatRoom.callsList[peerid].close();
+  delete ChatRoom.callsList[peerid];
+  console.log(ChatRoom.callsList);
+  removeVideoStream(peerid);
 }
 
 // Remove a Video from Grid - On Call End
@@ -512,11 +589,11 @@ function addEventsToCall(call) {
   call.on("stream", (remoteUserVideoStream) => {
     console.log("Call > Recieved Stream");
 
-    if (ChatRoom.clientsOnCall.includes(call.peer)) {
-      console.log("Call already in progress");
-      return;
-    }
-    ChatRoom.clientsOnCall.push(call.peer);
+    // if (ChatRoom.clientsOnCall.includes(call.peer)) {
+    //   console.log("Call already in progress");
+    //   return;
+    // }
+    // ChatRoom.clientsOnCall.push(call.peer);
     console.log("Call accepted");
 
     const video = document.createElement("video");
@@ -566,10 +643,13 @@ function addEventsToConnection(connClient) {
   // On 'close' of either MyPeer or Client connection
   connClient.on("close", () => {
     console.info("Closing connection: " + connClient.peer);
-    if (!connClient.open) {
-      return;
-    } // Already closed
-    connClient.close();
+    // if (!connClient.open) {
+    //   // Already closed
+    //   console.log("Already closed.");
+    //   return;
+    // }
+    disconnectClient(connClient.peer);
+    // connClient.close();
   });
 
   // On Any Error with Connection
@@ -607,9 +687,18 @@ function addEventsToPeerObject(peer) {
 
   // TODO: CORRECT THE CONDITIONAL EXPRESSION
   peer.on("call", (call) => {
-    if (ChatRoom.callsList === {} || Object.ChatRoom.callsList.conta)
-      ChatRoom.callsList[call.peer] = call;
+    if (ChatRoom.callsList === null) ChatRoom.callsList = {};
+    if (call.peer in ChatRoom.callsList === true) return;
+
+    ChatRoom.callsList[call.peer] = call;
+
     replyToCall(call);
+
+    var btnCall_ = document.getElementById(`btn-call-${call.peer}`);
+    var btnEndCall_ = document.getElementById(`btn-end-call-${call.peer}`);
+
+    btnCall_.disabled = true;
+    btnEndCall_.disabled = false;
   });
 
   peer.on("close", () => {
