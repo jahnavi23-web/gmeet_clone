@@ -1,0 +1,55 @@
+I am implementing scenario (A).
+
+(A) Host & Clients Model
+
+                  A               B           C           D           E
+                [host]          [admin]    [client]    [client]    [cleint]
+endCall         
+muteAudioS
+muteVideoS
+allowRecord
+joinRoom
+
+startRoom
+endRoom
+acceptJoin
+invite
+muteAudioU
+muteVideoU
+
+AddUsers    
+RemoveUsers   
+AssignHost    
+AddRole       
+Record        
+
+
+A gives out the list of participants [ABCDE] to each client. Each client sends out it's video stream to other participants & receives incoming video streams from other participants. Like so..
+
+simultaneously receiving a video streams from every other participant, [4] incoming
+A <<video<< B C D E
+B <<video<< A C D E
+C <<video<< A B D E
+D <<video<< A B C E
+E <<video<< A B C D
+
+sending out a video stream to each participant, [4] outgoing
+A >>video>> B C D E
+B >>video>> A C D E
+C >>video>> A B D E
+D >>video>> A B C E
+E >>video>> A B C D
+
+host controls
+A >>video>> B C D E
+
+Problems: 
+a.  Number of streams each participants maintains = 2x Number of Participants [10]
+
+    Each participant's Bandwidth limits the number of simultaneous video streams it can maintain [send & recieve].
+
+b.  Audio overlap & amplifier noise. 
+    No centralized control to mute & unmute a particular user's audio channel.
+    A user need to manually mute other users when listening to a particular user.
+
+Manual Solution: Host controls the access to speak in a group, by a "Talking Stick" model. The person holding the Talking Stick is the only one who speaks and show besides the host, and everyone else listens.
