@@ -38,7 +38,7 @@ export function uiJoinExisitingMeetingPeer(meetingID) {
     var { meet } = store.getState();
     var { meetingID } = meet;
     if (!meetingID) return;
-    console.log("Joining new meeting...");namesList 
+    console.log("Joining new meeting...");
     var success = Meet.connectPeer(meetingID);
     console.log("Joined " + success);
     // setTimeout(uiSendClientInfo(), 100);
