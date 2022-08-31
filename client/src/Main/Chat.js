@@ -1,5 +1,5 @@
-import { BottomBox } from "./ChatPage/BottomBox";
-import { TopBox } from "./ChatPage/TopBox";
+import BottomBox from "./Chat/BottomBox";
+import TopBox from "./Chat/TopBox";
 
 export function Chat() {
   return (

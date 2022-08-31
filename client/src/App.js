@@ -1,10 +1,9 @@
-import "./App.css";
-import "./Chat.css";
-import { Main } from "./Main/Main";
-
+import "./style/App.css";
+import "./style/Chat.css";
+import { Main } from "./Main";
 
 function App() {
-  return <Main/>;
+  return <Main />;
 }
 
-export default App; 
+export default App;
