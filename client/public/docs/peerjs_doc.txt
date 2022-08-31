@@ -1,0 +1,183 @@
+const peer = new Peer([id], [options]);
+
+const dataConnection = peer.connect(id, [options]);
+
+const mediaConnection = peer.call(id, stream, [options]);
+
+--------------------------------------------
+
+peer.disconnect();
+
+peer.reconnect();
+
+peer.destroy();
+
+peer.id
+
+        # peer.metadata.id = unique user_name
+
+peer.connections
+
+peer.disconnected
+                    #peer.disconnect()
+                    #peer.reconnect()
+
+peer.destroyed
+                #peer.destroy()
+                #new Peer();
+
+----------------------------------------------
+
+peer.on(event, callback);
+
+peer.on('open', function(id) { ... });
+
+peer.on('connection', function(dataConnection) { ... });
+
+peer.on('call', function(mediaConnection) { ... });
+
+                  # mediaConnection.answer([stream]);
+                  # stream > listenable
+
+
+peer.on('close', function() { ... });
+
+                  # peer.destroy()
+                  # peer.destroyed
+
+
+peer.on('disconnected', function() { ... });
+
+                  # peer.reconnect();
+                  # setTimeInterval - poll
+
+
+peer.on('error', function(err) { ... });
+
+      ------------------------  err.type                         
+
+      'browser-incompatible'
+
+
+      'disconnected'
+
+
+      'invalid-id'
+
+
+      'invalid-key'
+
+
+      'network'
+
+
+      'peer-unavailable'
+
+
+      'ssl-unavailable'
+
+
+      'server-error'
+
+
+      'socket-error'
+
+
+      'socket-closed'
+
+
+      'unavailable-id'
+
+
+      'webrtc'
+
+
+----------------------------------------
+
+DataConnection
+
+dataConnection.send(data);
+
+dataConnection.close();
+
+------------------------------------------------------
+
+dataConnection.dataChannel
+
+dataConnection.label
+
+dataConnection.metadata
+
+dataConnection.open
+
+dataConnection.peerConnection
+
+dataConnection.peer
+                    #peer.id
+
+dataConnection.reliable
+
+dataConnection.serialization
+
+dataConnection.type
+
+dataConnection.bufferSize
+
+-----------------------------------------------------
+
+dataConnection.on(event, callback);
+
+dataConnection.on('data', function(data) { ... });
+
+dataConnection.on('open', function() { ... });
+
+dataConnection.on('close', function() { ... });
+
+dataConnection.on('error', function(err) { ... });
+
+-------------------------------------------------
+
+MediaConnection
+
+
+mediaConnection.answer([stream],[options]);
+
+mediaConnection.close();
+
+mediaConnection.open
+
+mediaConnection.metadata
+
+mediaConnection.peer
+                      #peer.id
+
+mediaConnection.type
+
+------------------
+
+mediaConnection.on(event, callback);
+
+mediaConnection.on('stream', function(stream) { ... });
+
+mediaConnection.on('close', function() { ... });
+
+mediaConnection.on('error', function(err) { ... });
+
+----------------------------------------------------
+
+window.peerjs.util
+
+
+if (window.peerjs.util.browser === 'Firefox') { /* OK to peer with Firefox peers. */ }
+
+            'Firefox', 'Chrome', 'Unsupported', 'Supported'
+
+if (window.peerjs.util.supports.data) { /* OK to start a data connection. */ }
+
+    .audioVideo
+
+    .data
+
+    .binary
+
+    .reliable
