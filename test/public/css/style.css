@@ -1,0 +1,280 @@
+#video-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, 180px);
+	grid-auto-rows: 180px;
+	padding: 10px 10px;
+	background-color: var(--dark-color-b);
+}
+
+#video-grid video {
+	width: 100%;
+	height: 100%;
+	object-fit: cover; /* zoom in to make it square */
+}
+
+.video-grid-item {
+	width: 100%;
+	height: 100%;
+	object-fit: cover; /* zoom in to make it square */
+}
+
+.user-grid {
+	display: flex;
+	flex-direction: column;
+	padding: 10px 10px;
+	/* height: ; */
+
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+.video-overlay {
+	position: relative;
+	bottom: 24px;
+	left: 5px;
+	z-index: 100;
+	color: lightgray;
+}
+
+/* #user-grid span{
+	width: 100%;
+	height: 100%;
+	object-fit: cover; 
+	border: solid 1px black;
+} */
+
+.user {
+	width: 100%;
+	height: 100%;
+	object-fit: cover; /* zoom in to make it square */
+	border: solid 1px black;
+}
+
+.chat-grid {
+	/* display: grid;
+	grid-template-columns: repeat(auto-fill, 100%);
+	grid-auto-rows: 50px;
+	padding: 10px 10px;
+	background-color: var(--dark-color-b); */
+	display: flex;
+	flex-direction: column;
+	padding: 10px 10px;
+
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+/* #chat-grid span{
+	width: 100%;
+	height: 100%;
+	object-fit: cover; 
+	border: solid 1px black;
+} */
+
+.message-me {
+	width: 80%;
+	height: fit-content;
+	display: flex;
+	flex-direction: column;
+	border: solid 1px black;
+	text-align: right;
+	background-color: lightgoldenrodyellow;
+	border-radius: 8px;
+	align-self: flex-end;
+
+	padding: 8px;
+	margin: 5px;
+}
+
+.message-they {
+	width: 80%;
+	height: fit-content;
+	display: flex;
+	flex-direction: column;
+	border: solid 1px black;
+	text-align: left;
+	background-color: lightgreen;
+	border-radius: 8px;
+
+	padding: 8px;
+	margin: 5px;
+}
+
+.message-username {
+	width: 100%;
+	font-size: 18px;
+	font-weight: bold;
+	line-height: 22px;
+	color: blue;
+
+	/* padding: 8px; */
+	margin: 3px;
+}
+
+.message-text {
+	width: 100%;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 16px;
+	color: black;
+
+	/* padding: 8px; */
+	margin: 3px;
+}
+
+.body {
+	/* background-color: yellow; */
+	margin: 0;
+}
+.body-row-flex {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100vh;
+	background-color: white;
+}
+.header-flex {
+	display: flex;
+	flex-direction: row;
+	width: 100%;
+	height: 100px;
+	background-color: darkkhaki;
+}
+.main-flex {
+	display: flex;
+	flex-direction: row;
+	flex-grow: 1;
+	width: 100%;
+	height: calc(100vh - 100px - 70px) ;
+	/* background-color: green; */
+}
+.footer-flex {
+	display: flex;
+	flex-direction: row;
+	width: 100%;
+	height: 70px;
+	background-color: cyan;
+}
+
+.project-name {
+	padding-left: 10px;
+	padding-right: 10px;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	width: 200px;
+	background-color: yellowgreen;
+
+	font-size: 20px;
+	font-weight: 400;
+}
+.my-id-box {
+	padding: 5px;
+}
+
+#my-id {
+	padding: 0 10px;
+}
+
+.my-id-col-flex {
+	display: flex;
+	flex-direction: column;
+	width: 600px;
+}
+.my-id-upper-row-flex {
+	display: flex;
+	flex-direction: row;
+}
+
+#peer-form {
+	align-self: left;
+}
+
+.peer-id-box {
+	flex: 1;
+	padding: 5px;
+}
+
+.my-peer-id {
+	flex: 1;
+	padding: 5px;
+}
+
+.video-grid-box {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	width: 100%;
+	height: 100% ;
+	background-color: lightblue;
+	border: solid 2px blue;
+	margin: 2px;
+}
+.user-grid-box {
+	display: flex;
+	flex-direction: column;
+	/* flex-grow: 1; */
+	width: 900px;
+	height: 100% ;
+	background-color: lightblue;
+	border: solid 2px blue;
+	margin: 2px;
+}
+.chat-grid-box {
+	display: flex;
+	flex-direction: column;
+	/* flex-grow: 1; */
+	width: 900px;
+	height: 100% ;
+	background-color: lightblue;
+	border: solid 2px blue;
+	margin: 2px;
+}
+
+.input-id {
+	width: 400px;
+	height: 24px;
+}
+
+.chat-form {
+	padding: 3px;
+	align-items: center;
+	justify-content: center;
+	align-self: center;
+	vertical-align: center;
+}
+
+.input-message {
+	width: 1200px;
+	height: 32px;
+}
+
+.btn-msg {
+	width: 60px;
+	height: 40px;
+}
+
+.id-form {
+	width: 650px;
+}
+
+.input-name {
+	height: 24px;
+}
+
+.btn-call {
+	align-self: flex-end;
+	margin: 0 2px;
+}
+
+.user-upper-box-flex {
+	display: flex;
+	flex-direction: row;
+}
+
+.green {
+	background-color: rgb(0, 255, 0);
+}
+
+.red {
+	background-color: rgb(255, 100, 100);
+}
