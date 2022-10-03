@@ -46,6 +46,7 @@ export function VideoGrid(props) {
                     <MyCameraCustom
                       videoId={video.videoId}
                       name={video.name}
+                      peerid={video.peerid}
                       isMic={video.isMic}
                       style_vid={style_vid}
                     />
@@ -78,6 +79,7 @@ export function VideoSideGrid(props) {
                   <div key={video.videoId}>
                     <MyCameraCustom                      
                       videoId={video.videoId}
+                      peerid={video.peerid}
                       name={video.name}
                       isMic={video.isMic}
                       style_vid={style_vid}

@@ -5,10 +5,12 @@ import {
   NameBoxVideoX,
   NameBoxVideo,
 } from "../Main/Chat/TopBox/NameBox";
+import { videoStreamsListGlobal } from "../meet/ui";
 
-export const VIDEO_ID = 'videoId_';
+export const VIDEO_ID = "videoId_";
 
 export function MyCamera(props) {
+  console.log("MyCamera()");
   const streamCamVideo = () => {
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: false })
@@ -53,6 +55,46 @@ export function MyCamera(props) {
 }
 
 export function MyCameraCustom(props) {
+  console.log("MyCameraCustom()");
+  const streamCamVideo = () => {
+    const video = document.getElementById(props.videoId);
+    console.log(videoStreamsListGlobal);
+    console.log(props);
+    var stream = videoStreamsListGlobal[props.peerid];
+    video.srcObject = stream;
+    video.onloadedmetadata = (e) => {
+      video.play();
+    };
+  };
+
+  useEffect(() => {
+    streamCamVideo();
+  }, []);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        objectFit: "cover",
+        height: "100%",
+        width: "100%",
+        position: "relative",
+        left: "0",
+        justifyContent: "center",
+        alignContent: "center",
+        alignItems: "center",
+        verticalAlign: "center",
+      }}
+    >
+      <video autoPlay={true} id={props.videoId} style={props.style_vid}></video>
+      {/* <NameBoxClient /> */}
+      {/* <NameBoxVideoX /> */}
+      {/* <NameBoxVideo name={props.name} isMic={props.isMic}/> */}
+    </div>
+  );
+}
+
+export function MyCameraCustom_XX(props) {
   const streamCamVideo = () => {
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: false })

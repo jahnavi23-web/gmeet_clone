@@ -8,21 +8,37 @@ import {
   uiOnDisconnectClient,
   uiSendClientInfo,
   uiSetMyPeerID,
+  videoStreamsListGlobal,
 } from "./ui";
+import { waitNowFor } from "../Utils/JS";
+import { env } from "../env";
 
 // // PEER JS - DATA
-const IP_ADDR = "192.168.43.131"; // Redmi Hotspot IP
+const IPv4_PEER = env.IPV4_PEER || "192.168.43.131"; // Redmi Hotspot IP
+console.log("IP " + IPv4_PEER);
 // const IP_ADDR = "192.168.43.38";  // Samsung Hotspot IP
+const PORT_PEER = env.PORT_PEER || 3001;
+console.log("PORT " + PORT_PEER);
+const IS_CLOUD = env.IS_CLOUD;
+console.log("IS_Cloud " + IS_CLOUD);
 
 export class MeetClass {
+  static myVideoStream = null;
+  static peer = null;
+
   constructor() {
-    this.peer = null;
-    this.PEER_CLOUD = false;
+    MeetClass.peer = null;
+    this.IS_CLOUD = IS_CLOUD;
+
+    this.getUserMedia =
+      navigator.getUserMedia ||
+      navigator.webkitGetUserMedia ||
+      navigator.mozGetUserMedia;
 
     this.myPeerID = null;
     this.myPeerName = null;
-    this.myVideoStream = null;
-    this.MeetingID = null;
+    MeetClass.myVideoStream = null;
+    this.meetingID = null;
     this.mySdpTransform = () => {
       return null;
     }; // Advanced MediaStream Settings
@@ -30,6 +46,8 @@ export class MeetClass {
     this.callsList = null;
     this.connectionsList = null;
     this.namesList = null;
+
+    this.calls = null;
 
     this.myRoomName = "RoomX";
     this.myRoomID = null;
@@ -58,6 +76,8 @@ export class MeetClass {
         },
       ],
     };
+
+    return this;
   }
   MSG_TYPE = {
     CHAT: "chat",
@@ -97,9 +117,10 @@ export class MeetClass {
     ADMIN: "admin",
     CLIENT: "client",
   };
-  startMyPeer(myPeerName) {
-    if (this.peer !== null) {
-      if (this.peer.destroyed === true) {
+  startMyPeer() {
+    console.log("startMyPeer()");
+    if (MeetClass.peer !== null) {
+      if (MeetClass.peer.destroyed === true) {
         console.log("Peer already Exists & But Destroyed. Creating New Peer.");
       } else {
         console.log("Peer already Exists & Active. Cannot Creat New Peer.");
@@ -113,8 +134,8 @@ export class MeetClass {
     // Options for Local Peer Object
     var options_peer = {
       key: "peerjs",
-      host: IP_ADDR,
-      port: "3001",
+      host: IPv4_PEER,
+      port: PORT_PEER,
       pingInterval: 5000,
       path: "/",
       secure: true,
@@ -123,22 +144,41 @@ export class MeetClass {
     };
 
     try {
-      if (this.PEER_CLOUD) {
+      if (this.IS_CLOUD) {
         // Cloud Peer Broker Server
-        this.peer = new Peer();
+        console.log("Cloud Peer Broker Server");
+        MeetClass.peer = new Peer();
+        // this.peer = new Peer({
+        //   config: {
+        //     iceServers: [
+        //       { url: "stun:stun.l.google.com:19302" },
+        //       { url: "turn:homeo@turn.bistri.com:80", credential: "homeo" },
+        //     ],
+        //   } /* Sample servers, please use appropriate ones */,
+        // });
       } else {
         // Local Peer Broker Server
-        this.peer = new Peer(undefined, options_peer);
+        console.log("Local Peer Broker Server");
+        MeetClass.peer = new Peer(undefined, options_peer);
       }
 
       // Populate Peer Object with On-Events
-      this.addEventsToPeerObject(this.peer);
+      this.addEventsToPeerObject(MeetClass.peer);
 
       return true;
     } catch (e) {
       return false;
     }
   }
+
+  addMyselfAsClient() {
+    // this.setMyPeerName(this.getMyPeerName());
+    this.addClientToList({
+      name: this.getMyPeerName(),
+      peerid: this.getMyPeerID(),
+    });
+  }
+
   addEventsToPeerObject(peer) {
     console.log("addEventsToPeerObject(peer)");
     // On connection with Peer Broker
@@ -150,11 +190,8 @@ export class MeetClass {
 
       // Set My Peer ID
       this.setMyPeerID(myPeerID);
-      this.setMyPeerName(this.getMyPeerName());
-      this.addClientToList({
-        name: this.getMyPeerName(),
-        peerid: this.getMyPeerID(),
-      });
+
+      this.addMyselfAsClient();
 
       this.setUpMyVideo();
     });
@@ -176,18 +213,23 @@ export class MeetClass {
     // TODO: CORRECT THE CONDITIONAL EXPRESSION
     peer.on("call", (call) => {
       console.log('peer.on("call")');
+      this.addEventsToCall(call);
       console.log(call);
       if (this.callsList === null) this.callsList = {};
       if (call.peer in this.callsList === true) return;
 
-      // this.callsList[call.peer] = call;
+      this.callsList[call.peer] = call;
       // this.namesList[call.metadata.caller.peerid] = call.metadata.caller.name;
 
       this.addClientToListByCall(call);
 
       console.log(this.namesList);
-      setTimeout(uiSendClientInfo(), 100);
-      this.replyToCall(call);
+      // setTimeout(uiSendClientInfo(), 100);
+      uiSendClientInfo();
+
+      // this.replyToCall(call);
+      setTimeout(this.replyToCall, 1000, call);
+
       // uiOnCall(call.peer);
     });
 
@@ -269,6 +311,8 @@ export class MeetClass {
     call.on("stream", (remoteUserVideoStream) => {
       console.log('call.on("stream")');
       console.log("Call > Recieved Stream");
+      console.log(remoteUserVideoStream);
+
       console.log(call);
       console.log(JSON.stringify(this.namesList));
       var callData = JSON.parse(JSON.stringify(call.metadata));
@@ -289,6 +333,8 @@ export class MeetClass {
         call_name = call.metadata.caller.name;
       }
 
+
+      videoStreamsListGlobal[call.peer] = remoteUserVideoStream;
       uiAddVideoStream(remoteUserVideoStream, call_name, call.peer);
     });
 
@@ -452,7 +498,7 @@ export class MeetClass {
     }
   }
   addConnToList(connClient) {
-    console.log("addConnToList(connClient)");
+    console.log("addConnToList()");
     if (this.connectionsList === null) this.connectionsList = {};
     if (connClient.peer in this.connectionsList) return;
 
@@ -469,9 +515,9 @@ export class MeetClass {
     // Update UI - users
     // uiUpdateUsers(data);
   }
-  replyToCall(call) {
+  replyToCall_x(call) {
+    console.log("replyToCall()");
     console.log("Recieving a call from " + call.peer);
-    console.log("replyToCall(call)");
     // console.log(call);
     console.log(call);
 
@@ -481,7 +527,9 @@ export class MeetClass {
     };
     // call.metadata.reciever.name = uiGetMyName();
     // call.metadata.reciever.peerid = this.myPeerID;
-    call.answer(this.myVideoStream, options_call);
+    // waitNowFor(500);
+    var stream = this.getMyVideoStream();
+    call.answer(stream, options_call);
 
     this.addEventsToCall(call);
   }
@@ -506,10 +554,45 @@ export class MeetClass {
 
     uiEndCall(peerid);
   }
-  placeCall(call) {
-    console.log("Sending a call request to " + call.peer);
 
+  placeCall(peerid) {
+    console.log("placeCall()");
+    var options_call = {
+      metadata: {
+        caller: { name: this.myPeerName, peerid: this.myPeerID },
+        reciever: { name: null, peerid: peerid },
+      },
+      sdpTransform: this.mySdpTransform,
+    };
+
+    var stream = this.getMyVideoStream();
+
+    var call = MeetClass.peer.call(peerid, stream, options_call); // MediaConnection
+
+    if (!call) return false;
     this.addEventsToCall(call);
+
+    if (this.callsList === null) this.callsList = {};
+    if (call.peer in this.callsList === true) return false;
+    console.log(call);
+
+    this.callsList[peerid] = call;
+    // this.namesList[call.metadata.caller.peerid] = call.metadata.caller.name;
+    console.log(this.namesList);
+
+    console.log("Sending a call request to " + call.peer);
+  }
+  replyToCall(call) {
+    console.log("replyToCall()");
+    var options_call = {
+      metadata: { name: uiGetMyName(), peerid: this.myPeerID },
+      SdpTransform: "this.mySdpTransform",
+    };
+
+    // var stream = this.getMyVideoStream();
+    var stream = MeetClass.myVideoStream;
+
+    call.answer(stream, options_call);
   }
   closeClientConnection(peerid) {
     if (this.isListEmpty()) return;
@@ -565,13 +648,16 @@ export class MeetClass {
       label: null,
       metadata: {
         sender: { name: this.myPeerName, peerid: this.myPeerID },
-        reciever: {name: null, peerid: peer_id_remote}
+        reciever: { name: null, peerid: peer_id_remote },
       },
       // serialization: 'json',
       // reliable: false,
     };
     // Initiate PeerJS connection with remote Peer Client
-    const connClient = this.peer.connect(peer_id_remote, options_connection);
+    const connClient = MeetClass.peer.connect(
+      peer_id_remote,
+      options_connection
+    );
     if (!connClient) return false;
 
     console.log("Create Connection with : " + peer_id_remote);
@@ -605,7 +691,7 @@ export class MeetClass {
     return this.connectionsList[peerid].open;
   }
   isConnection(peer_id_remote) {
-    console.log("isConnection(peer_id_remote)");
+    console.log("isConnection()");
     if (this.connectionsList === null) return false;
     return peer_id_remote in this.connectionsList;
   }
@@ -613,21 +699,11 @@ export class MeetClass {
 
   // Show Self Video first - On Peer Connection Successful
   setUpMyVideo() {
-    if (navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices
-        .getUserMedia({ video: true })
-        .then((stream) => {
-          // Show our video on our Screen
+    console.log("setUpMyVideo()");
 
-          this.setMyVideoStream(stream);
-          uiAddVideoStream(this.myVideoStream, this.myPeerName, this.myPeerID);
-          // console.log(stream);
-        })
-        .catch(function (error) {
-          console.log("Something went wrong!");
-          console.error(error);
-        });
-    }
+    this.initializeMyVideoStream();
+
+    uiAddVideoStream(this.getMyVideoStream(), this.myPeerName, this.myPeerID);
   }
 
   getMyPeerName() {
@@ -644,10 +720,10 @@ export class MeetClass {
     uiSetMyPeerID(myPeerID);
   }
   getMeetingID() {
-    return this.MeetingID;
+    return this.meetingID;
   }
   setMeetingID(MeetingID) {
-    this.MeetingID = MeetingID;
+    this.meetingID = MeetingID;
   }
   addClientToList({ name, peerid }) {
     console.log("addClientToList");
@@ -682,65 +758,37 @@ export class MeetClass {
   setClientName(peerid, name) {
     this.namesList[peerid] = name;
   }
+
+  initializeMyVideoStream() {
+    console.log("initializeMyVideoStream()");
+    if (this.getUserMedia) {
+      navigator.mediaDevices
+        .getUserMedia({ video: true })
+        .then((stream) => {
+          // Show our video on our Screen
+          console.log("Video Stream available");
+          this.setMyVideoStream(stream);
+          videoStreamsListGlobal[this.myPeerID] = stream;
+          console.log(stream);
+        })
+        .catch(function (error) {
+          console.log("Something went wrong!");
+          console.error(error);
+        });
+    } else {
+      console.log("getUserMedia NOT AVAILABLE");
+    }
+  }
+
   setMyVideoStream(stream) {
-    this.myVideoStream = stream;
+    console.log("setMyVideoStream()");
+    MeetClass.myVideoStream = stream;
+  }
+  getMyVideoStream() {
+    console.log("getMyVideoStream()");
+    return MeetClass.myVideoStream;
   }
 }
 
 const Meet = new MeetClass();
 export default Meet;
-
-export function helpIntro(props) {
-  console.log("Help arriving soon...");
-}
-
-export function feedbackIntro(props) {
-  console.log("Thank for you feedback...");
-}
-
-export function settingsIntro(props) {
-  console.log("Meeting's Settings...");
-}
-
-export function appsIntro(props) {
-  console.log("These are our Apps...");
-}
-
-export function accountDetailsIntro(props) {
-  console.log("Your Account details are here...");
-}
-
-export function micTurnOn_Control(props) {
-  console.log("Mic is Turning On...");
-  return true;
-}
-
-export function micTurnOff_Control(props) {
-  console.log("Mic is Turing Off...");
-  return true;
-}
-
-export function cameraTurnOn_Control(props) {
-  console.log("Camera is Turing ON...");
-  return true;
-}
-
-export function cameraTurnOff_Control(props) {
-  console.log("Camera is Turning Off...");
-  return true;
-}
-
-export function ccTurnOn_Control(props) {
-  console.log("Subtitles is Turning On...");
-  return true;
-}
-
-export function ccTurnOff_Control(props) {
-  console.log("Subtitles is Turning Off...");
-  return true;
-}
-
-export function endCall_Control(props) {
-  console.log("Ending Call...");
-  return true;
-}

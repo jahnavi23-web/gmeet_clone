@@ -8,7 +8,7 @@ import { connect } from "react-redux";
 
 import { newMeeting, setHost } from "../../redux";
 
-import { uiStartMyPeer } from "../../meet/ui";
+import { uiStartMyPeer, uiStartMeeting } from "../../meet/ui";
 
 function NewMeetingButton(props) {
   const dropDown = new UiDropdown();
@@ -47,10 +47,10 @@ function NewMeetingButton(props) {
       id: i++,
       onClick: (e) => {
         if (e) e.preventDefault();
-        console.log("Start Meet button clicked.");
+        console.log("Start New Meeting button clicked.");
         navigate("/chat");
-        var success = uiStartMyPeer();
-        if (!success) return;
+        var success = uiStartMeeting();
+        // if (!success) return;
         props.setHost(true);
         hideDropDown();
       },

@@ -1,25 +1,25 @@
 import * as MEET from "./meetTypes";
 
 
-export const startPeer = (myPeerID) => {
+export const setMyPeerID = (myPeerID) => {
   return {
     type: MEET.START_PEERJS,
     info: "start a new peerjs object",
     payload: myPeerID,
   };
 };
-export const startMeeting = (myPeerID) => {
+export const setMeetingID = (MeetingID) => {
   return {
     type: MEET.START_MEETING,
     info: "start a new meeting",
-    payload: myPeerID,
+    payload: MeetingID,
   };
 };
-export const addVideoToList = (videoStream) => {
+export const addVideoToList = (videoStreamInfo) => {
   return {
     type: MEET.ADD_VIDEO_TO_LIST,
     info: "add a video to list",
-    payload: videoStream,
+    payload: videoStreamInfo,
   };
 };
 export const joinExistingMeeting = (meetingID) => {
@@ -68,3 +68,5 @@ export const setMyPeerId = (peerid) => {
     payload: peerid,
   };
 };
+
+ 

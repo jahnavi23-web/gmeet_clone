@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cd /var/log
+touch test.log
+echo -e "Time \n" `date` > /var/log/test.log			# date
+echo -e "Logged in users \n" `users` >> /var/log/test.log 	# w, who, users
+echo -e "Uptime \n" `uptime` >> /var/log/test.log		# uptime
+

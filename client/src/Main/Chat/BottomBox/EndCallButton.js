@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Icon } from "../../../res/svg/Svg";
 import { useNavigate } from "react-router-dom";
-import { endCall_Control } from "../../../meet/meet";
+import { endCall_Control } from "../../../meet/uiStatus";
 import { ControlButton } from "./ControlButton";
 
 import { connect } from "react-redux";

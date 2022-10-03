@@ -1,5 +1,5 @@
 import { connect } from "react-redux";
-import { uiJoinExisitingMeetingPeer } from "../../meet/ui";
+import { uiJoinMeeting } from "../../meet/ui";
 import { useNavigate } from "react-router-dom";
 
 import { joinExistingMeeting, setHost } from "../../redux";
@@ -12,10 +12,13 @@ function JoinButton(props) {
     if (!meetingID) return;
     props.joinExistingMeeting(meetingID);
     props.setHost(false);
-    var success = uiJoinExisitingMeetingPeer();
-    if (!success) return;
+    // var success = uiJoinMeeting();
+    // uiJoinMeeting();
+    // if (!success) return;
     textInput.value = "";
     navigate("/chat");
+
+    uiJoinMeeting();
   };
 
   return (

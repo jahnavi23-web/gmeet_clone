@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Svg } from "../../../res/svg/Svg";
-import { micTurnOff_Control, micTurnOn_Control } from "../../../meet/meet";
+import { micTurnOff_Control, micTurnOn_Control } from "../../../meet/uiStatus";
 import { ControlButton } from "./ControlButton";
 
 import { connect } from "react-redux";

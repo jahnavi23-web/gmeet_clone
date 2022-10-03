@@ -4,6 +4,7 @@ import { SET_MY_NAME } from "../redux/button/buttonTypes";
 import { connect } from "react-redux";
 import { setMyName } from "../redux";
 import { getTime } from "../Utils/TimeDate";
+import { uiAddMyselfAsClient, uiStartMyPeer } from "../meet/ui";
 
 function AccountDetailsBox(props) {
   const handleClick = (e) => {
@@ -16,6 +17,7 @@ function AccountDetailsBox(props) {
     var text = textInput.value;
     props.setMyName(text);
     textInput.value = "";
+    uiStartMyPeer();
   };
 
   return (

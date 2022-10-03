@@ -8,7 +8,7 @@ import {
   settingsIntro,
   appsIntro,
   accountDetailsIntro,
-} from "../meet/meet";
+} from "../meet/uiStatus";
 
 import LeftArrowButton from "./Intro/LeftArrowButton";
 import RightArrowButton from "./Intro/RightArrowButton";
@@ -17,12 +17,12 @@ import BodyLeftIntro from "./BodyLeftIntro";
 export function Intro() {
   return (
     <div className="Intro">
-      {HeaderIntro()}
+      <HeaderIntro />
 
       <div className="body-box">
         <div className="body-flex">
           <BodyLeftIntro />
-          {BodyRightIntro()}
+          <BodyRightIntro />
         </div>
       </div>
     </div>

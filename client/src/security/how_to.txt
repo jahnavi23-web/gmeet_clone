@@ -1,0 +1,5 @@
+openssl req -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out myserver.crt -keyout myserver.key
+
+openssl req -x509 -newkey rsa:2048 -keyout keytmp.pem -out cert.pem -days 365
+
+openssl rsa -in keytmp.pem -out key.pem

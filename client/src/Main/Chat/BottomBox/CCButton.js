@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Icon } from "../../../res/svg/Svg";
-import { ccTurnOff_Control, ccTurnOn_Control } from "../../../meet/meet";
+import { ccTurnOff_Control, ccTurnOn_Control } from "../../../meet/uiStatus";
 import { ControlButton } from "./ControlButton";
 
 import { connect } from "react-redux";
