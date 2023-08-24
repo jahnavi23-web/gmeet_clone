@@ -1,2 +1,2 @@
 # gmeet-clone
-A clone of Google Meet Video chat applicationnn.
+A clone of Google Meet Video chat application.
